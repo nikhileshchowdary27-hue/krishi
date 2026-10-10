@@ -1,0 +1,91 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>KrishiMitra AI</title>
+<style>
+:root{--g:#1b5e20;--ink:#1d2b1f;--bg:#faf8f3;--warn:#b3261e}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.55 system-ui,"Noto Sans Telugu","Nirmala UI","Gautami",sans-serif;background:var(--bg);color:var(--ink)}
+header{background:var(--g);color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+h1{font-size:1.25rem;margin:0}
+button{min-height:44px;padding:0 16px;border:0;border-radius:8px;font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #f9a825;outline-offset:2px}
+.lang button{background:#fff;color:var(--g);margin-left:6px}.lang button[aria-pressed=true]{background:#c8e6c9;font-weight:700}
+nav{display:flex;gap:8px;padding:12px 16px;flex-wrap:wrap;max-width:900px;margin:auto}
+nav button{background:#e3ecdf;color:var(--g)}nav button[aria-selected=true]{background:var(--g);color:#fff}
+main{max-width:900px;margin:auto;padding:0 16px 40px}
+.card{background:#fff;border:1px solid #d9e2d4;border-radius:12px;padding:16px;margin:12px 0}
+.notice{border-left:4px solid #e0a800;background:#fff8e1;padding:8px 12px;margin:12px 0}
+label{display:block;font-size:.875rem;margin:8px 0 2px}
+input,select{width:100%;min-height:44px;padding:6px 10px;border:1px solid #8a998a;border-radius:8px;font:inherit}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.go{background:var(--g);color:#fff;margin-top:12px}
+.scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:.9rem}
+td,th{padding:6px 8px;border-bottom:1px solid #e3e8df;text-align:right}th:first-child,td:first-child{text-align:left}
+.neg{color:var(--warn);font-weight:700}
+</style></head><body>
+<header><h1>KrishiMitra AI</h1><div class="lang" role="group" aria-label="Language">
+<button id="en" aria-pressed="true">English</button><button id="te" aria-pressed="false">తెలుగు</button></div></header>
+<nav role="tablist"></nav><main id="v"></main>
+<script>
+const T={en:{plan:"Plan my crop",market:"Compare markets",irr:"Plan irrigation",demo:"Sample values for demonstration. Replace them with your own. All figures are estimates, not guarantees.",
+area:"Land area",unit:"Unit",crop:"Crop",yield:"Yield (quintal/acre)",price:"Price (₹/quintal)",cost:"Cost (₹/acre)",go:"Calculate",
+ya:"Yield change %",pa:"Price change %",low:"Low",reference:"Reference",high:"High",gross:"Revenue ₹",net:"Net return ₹",margin:"Margin %",costs:"Cost ₹",
+assump:"Low/High cases use illustrative ±15% yield and ±10% price. They are not statistical predictions.",
+qty:"Quantity (quintal)",other:"Other selling costs ₹",mkt:"Market",transport:"Transport ₹",src:"Source",user:"User-provided",
+mnote:"Prices are entered by you. No live market data is connected yet.",et0:"Reference ET₀ (mm/day)",kc:"Crop coefficient Kc",days:"Days",rain:"Rainfall (mm)",
+need:"Net need (mm)",gross_mm:"Gross need (mm)",litres:"Water needed (litres)",inote:"Approximate FAO-56 style estimate from your inputs. Add soil data and local weather for better accuracy.",err:"Could not reach the server. Check your connection and try again.",none:"n/a"},
+te:{plan:"పంట ప్రణాళిక",market:"మార్కెట్ పోలిక",irr:"నీటిపారుదల ప్రణాళిక",demo:"ఇవి ప్రదర్శన కోసం నమూనా విలువలు. మీ స్వంత విలువలను నమోదు చేయండి. అన్ని లెక్కలు అంచనాలు మాత్రమే, హామీ కాదు.",
+area:"భూమి విస్తీర్ణం",unit:"యూనిట్",crop:"పంట",yield:"దిగుబడి (క్వింటాళ్లు/ఎకరం)",price:"ధర (₹/క్వింటాల్)",cost:"ఖర్చు (₹/ఎకరం)",go:"లెక్కించండి",
+ya:"దిగుబడి మార్పు %",pa:"ధర మార్పు %",low:"తక్కువ",reference:"సాధారణ",high:"ఎక్కువ",gross:"ఆదాయం ₹",net:"నికర రాబడి ₹",margin:"లాభ శాతం",costs:"ఖర్చు ₹",
+assump:"తక్కువ/ఎక్కువ కేసులు ±15% దిగుబడి, ±10% ధర అనే ఉదాహరణ అంచనాలతో ఉన్నాయి. ఇవి గణాంక అంచనాలు కావు.",
+qty:"పరిమాణం (క్వింటాళ్లు)",other:"ఇతర అమ్మకపు ఖర్చులు ₹",mkt:"మార్కెట్",transport:"రవాణా ₹",src:"మూలం",user:"వినియోగదారు ఇచ్చినది",
+mnote:"ధరలు మీరు నమోదు చేసినవే. ప్రత్యక్ష మార్కెట్ డేటా ఇంకా అనుసంధానం కాలేదు.",et0:"సూచన ET₀ (మి.మీ/రోజు)",kc:"పంట గుణకం Kc",days:"రోజులు",rain:"వర్షపాతం (మి.మీ)",
+need:"నికర అవసరం (మి.మీ)",gross_mm:"మొత్తం అవసరం (మి.మీ)",litres:"అవసరమైన నీరు (లీటర్లు)",inote:"మీ ఇన్‌పుట్‌ల ఆధారంగా FAO-56 తరహా అంచనా మాత్రమే. మెరుగైన కచ్చితత్వానికి నేల, వాతావరణ వివరాలు జోడించండి.",err:"సర్వర్‌కు చేరలేకపోయాం. కనెక్షన్ తనిఖీ చేసి మళ్లీ ప్రయత్నించండి.",none:"లేదు"}};
+let L="en",tab="plan";const t=k=>T[L][k]||k,$=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt=n=>n==null?t("none"):new Intl.NumberFormat(L==="te"?"te-IN":"en-IN",{maximumFractionDigits:1}).format(n);
+const cls=n=>n<0?' class="neg"':"";
+const unitSel=`<select id="unit"><option>acre</option><option>hectare</option><option>guntha</option><option>cent</option></select>`;
+const inp=(id,label,val,type="number")=>`<div><label for="${id}">${label}</label><input id="${id}" type="${type}" min="0" step="any" value="${val}"></div>`;
+const num=id=>parseFloat($(id).value)||0;
+async function post(u,b){try{const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)});
+ if(!r.ok)throw new Error((await r.json()).detail?.[0]?.msg||"invalid input");return await r.json()}catch(e){return{error:e.message==="Failed to fetch"?t("err"):e.message}}}
+const out=h=>$("out").innerHTML=h,errBox=m=>out(`<div class="notice" role="alert">${esc(m)}</div>`);
+
+const views={
+plan(){const D=[["Paddy",25,2200,28000],["Maize",30,2000,24000],["Groundnut",12,6000,30000]];
+ return `<div class="card"><div class="row">${inp("area",t("area"),2)}<div><label for="unit">${t("unit")}</label>${unitSel}</div></div>
+ ${D.map((d,i)=>`<div class="row">${inp("n"+i,t("crop"),d[0],"text")}${inp("y"+i,t("yield"),d[1])}${inp("p"+i,t("price"),d[2])}${inp("c"+i,t("cost"),d[3])}</div>`).join("")}
+ <div class="row">${inp("ya",t("ya"),100)}${inp("pa",t("pa"),100)}</div><button class="go" id="go">${t("go")}</button></div>
+ <p class="notice">${t("assump")}</p><div id="out" aria-live="polite"></div>`},
+async planRun(){const body={area:num("area"),unit:$("unit").value,yield_adj:num("ya")/100,price_adj:num("pa")/100,
+  crops:[0,1,2].map(i=>({name:$("n"+i).value||"Crop",yield_per_acre:num("y"+i),price:num("p"+i),cost_per_acre:num("c"+i)}))};
+ const r=await post("/api/v1/scenarios/compare",body);if(r.error)return errBox(r.error);
+ out(r.results.map(c=>`<div class="card"><h2>${esc(c.name)}</h2><div class="scroll"><table><tr><th></th><th>${t("gross")}</th><th>${t("costs")}</th><th>${t("net")}</th><th>${t("margin")}</th></tr>
+ ${["low","reference","high"].map(k=>{const s=c.scenarios[k];return`<tr><td>${t(k)}</td><td>${fmt(s.gross)}</td><td>${fmt(s.cost)}</td><td${cls(s.net)}>${fmt(s.net)}</td><td>${fmt(s.margin_pct)}</td></tr>`}).join("")}</table></div></div>`).join(""))},
+market(){const D=[["Market A",2100,1500],["Market B",2250,3200],["Market C",2000,500]];
+ return `<div class="card"><div class="row">${inp("q",t("qty"),40)}${inp("o",t("other"),500)}</div>
+ ${D.map((d,i)=>`<div class="row">${inp("m"+i,t("mkt"),d[0],"text")}${inp("mp"+i,t("price"),d[1])}${inp("mt"+i,t("transport"),d[2])}</div>`).join("")}
+ <button class="go" id="go">${t("go")}</button></div><p class="notice">${t("demo")} ${t("mnote")}</p><div id="out" aria-live="polite"></div>`},
+async marketRun(){const r=await post("/api/v1/markets/compare",{quantity:num("q"),other_costs:num("o"),markets:[0,1,2].map(i=>({name:$("m"+i).value||"Market",price:num("mp"+i),transport:num("mt"+i)}))});
+ if(r.error)return errBox(r.error);
+ out(`<div class="card scroll"><table><tr><th>${t("mkt")}</th><th>${t("price")}</th><th>${t("transport")}</th><th>${t("net")}</th><th>${t("src")}</th></tr>
+ ${r.results.map(m=>`<tr><td>${esc(m.name)}</td><td>${fmt(m.price)}</td><td>${fmt(m.transport)}</td><td${cls(m.net)}>${fmt(m.net)}</td><td>${t("user")}</td></tr>`).join("")}</table></div>`)},
+irr(){return `<div class="card"><div class="row">${inp("cropn",t("crop"),"Paddy","text")}${inp("et0",t("et0"),5)}${inp("kc",t("kc"),1.1)}${inp("days",t("days"),7)}${inp("rain",t("rain"),10)}</div>
+ <div class="row">${inp("area",t("area"),2)}<div><label for="unit">${t("unit")}</label>${unitSel}</div></div><button class="go" id="go">${t("go")}</button></div>
+ <p class="notice">${t("demo")} ${t("inote")}</p><div id="out" aria-live="polite"></div>`},
+async irrRun(){const r=await post("/api/v1/irrigation/plan",{et0:num("et0"),kc:num("kc"),days:Math.max(1,Math.round(num("days"))),rain_mm:num("rain"),area:num("area"),unit:$("unit").value});
+ if(r.error)return errBox(r.error);
+ out(`<div class="card"><table><tr><td>ETc (mm)</td><td>${fmt(r.etc_mm)}</td></tr><tr><td>${t("need")}</td><td>${fmt(r.net_mm)}</td></tr>
+ <tr><td>${t("gross_mm")}</td><td>${fmt(r.gross_mm)}</td></tr><tr><td>${t("litres")}</td><td>${fmt(r.litres)}</td></tr></table></div>`)}};
+
+function render(){
+ document.documentElement.lang=L;$("en").setAttribute("aria-pressed",L==="en");$("te").setAttribute("aria-pressed",L==="te");
+ document.querySelector("nav").innerHTML=["plan","market","irr"].map(k=>`<button role="tab" data-t="${k}" aria-selected="${k===tab}">${t(k)}</button>`).join("");
+ $("v").innerHTML=(tab==="plan"?`<p class="notice">${t("demo")}</p>`:"")+views[tab]();
+ $("go").onclick=()=>views[tab+"Run"]();
+ if(tab==="plan")["ya","pa"].forEach(i=>$(i).oninput=()=>views.planRun());
+ views[tab+"Run"]();}
+document.querySelector("nav").onclick=e=>{if(e.target.dataset.t){tab=e.target.dataset.t;render()}};
+$("en").onclick=()=>{L="en";render()};$("te").onclick=()=>{L="te";render()};
+render();
+</script></body></html>
